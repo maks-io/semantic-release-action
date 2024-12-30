@@ -1,0 +1,34 @@
+{
+  "name": "semantic-release-action",
+  "version": "1.0.0",
+  "description": "A GitHub Action to publish npm packages and create GitHub releases automatically.",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "ncc build index.ts -o dist",
+    "lint": "eslint ."
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/maks-io/semantic-release-action.git"
+  },
+  "keywords": [
+    "github-action",
+    "npm",
+    "release",
+    "automation"
+  ],
+  "author": "Markus Kurzmann <markus@kurzmann.io>",
+  "license": "MIT",
+  "dependencies": {
+    "@actions/core": "^1.11.1",
+    "@actions/github": "^6.0.0",
+    "@types/node": "^22.10.2",
+    "semver": "^7.6.3",
+    "typescript": "^5.7.2"
+  },
+  "devDependencies": {
+    "@vercel/ncc": "^0.38.3",
+    "eslint": "^8.57.1",
+    "prettier": "^3.4.2"
+  }
+}

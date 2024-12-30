@@ -1,0 +1,15 @@
+name: "Semantic Release Action"
+description: "Automate releases with semantic tags and validations"
+inputs:
+  token:
+    description: "GitHub token"
+    required: true
+  npm-token:
+    description: "NPM token for publishing"
+    required: true
+outputs:
+  version:
+    description: "The released version"
+runs:
+  using: "node16"
+  main: "index.ts"
