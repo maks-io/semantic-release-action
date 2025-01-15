@@ -4,7 +4,8 @@
   "description": "A GitHub Action to publish npm packages and create GitHub releases automatically.",
   "main": "dist/index.js",
   "scripts": {
-    "build": "ncc build index.ts -o dist",
+    "preinstall": "npx -l -y force-package-manager -p npm -o mute -c",
+    "build": "ncc build src/index.ts -o dist",
     "lint": "eslint ."
   },
   "repository": {
@@ -23,12 +24,13 @@
     "@actions/core": "^1.11.1",
     "@actions/github": "^6.0.0",
     "@types/node": "^22.10.2",
+    "env-var-manager": "^3.0.4",
     "semver": "^7.6.3",
     "typescript": "^5.7.2"
   },
   "devDependencies": {
+    "@types/semver": "^7.5.8",
     "@vercel/ncc": "^0.38.3",
-    "eslint": "^8.57.1",
     "prettier": "^3.4.2"
   }
 }
