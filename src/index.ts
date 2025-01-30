@@ -1,72 +1,69 @@
 import * as core from "@actions/core";
+import { EnvVarManager } from "@/env/envVarManager";
 import { logStep } from "@/helpers/logStep";
-import { validateTag } from "@/helpers/validateTag";
+import { validateRef } from "@/helpers/validateRef";
 import { validateReleaseVersionNumber } from "@/helpers/validateReleaseVersionNumber";
 import { releaseToNpmRegistry } from "@/helpers/releaseToNpmRegistry";
 import { createGitHubRelease } from "@/helpers/createGitHubRelease";
 import { reportError } from "@/helpers/reportError";
+import { stepTitles } from "@/config/stepTitles";
 
-let EnvVarManager: any;
-try {
-  const { EnvVarManager: EVM } = require("@/env/envVarManager");
-  EnvVarManager = EVM;
-} catch (e) {}
+const isJestTestRun = process.env.JEST_WORKER_ID !== undefined;
 
 export async function run() {
-  const stepTitle1 = "Validate environment variables";
   try {
-    logStep(1, stepTitle1, "start");
-    EnvVarManager.validateAll();
-    logStep(1, stepTitle1, "done");
+    logStep(stepTitles.validEnvVars, "start");
+    EnvVarManager.validateAll(true, !isJestTestRun);
+    logStep(stepTitles.validEnvVars, "done");
   } catch (e: any) {
-    reportError(e, 1, stepTitle1);
+    reportError(e, 1, stepTitles.validEnvVars);
+  }
+  try {
+    logStep(stepTitles.validTag, "start");
+    validateRef();
+    logStep(stepTitles.validTag, "done");
+  } catch (e: any) {
+    reportError(e, 2, stepTitles.validTag);
   }
 
-  const stepTitle2 = "Validate Tag";
   try {
-    logStep(2, stepTitle2, "start");
-    validateTag();
-    logStep(2, stepTitle2, "done");
-  } catch (e: any) {
-    reportError(e, 2, stepTitle2);
-  }
-
-  const stepTitle3 = "Validate Release Version Number";
-  try {
-    logStep(3, stepTitle3, "start");
+    logStep(stepTitles.validReleaseNr, "start");
     validateReleaseVersionNumber();
-    logStep(3, stepTitle3, "done");
+    logStep(stepTitles.validReleaseNr, "done");
   } catch (e: any) {
-    reportError(e, 3, stepTitle3);
+    reportError(e, 3, stepTitles.validReleaseNr);
   }
 
-  // TODO build
   // TODO validate license
   // TODO validate static code
+  // TODO run unit tests
+  // TODO build
 
-  const stepTitle4 = "Release to npm Registry";
   try {
-    logStep(4, stepTitle4, "start");
+    logStep(stepTitles.releaseToNpm, "start");
     releaseToNpmRegistry();
-    logStep(4, stepTitle4, "done");
+    logStep(stepTitles.releaseToNpm, "done");
   } catch (e: any) {
-    reportError(e, 4, stepTitle4);
+    reportError(e, 4, stepTitles.releaseToNpm);
   }
 
-  const stepTitle5 = "Create GitHub Release";
   try {
-    logStep(5, stepTitle5, "start");
+    logStep(stepTitles.createGithubRelease, "start");
     createGitHubRelease();
-    logStep(5, stepTitle5, "done");
+    logStep(stepTitles.createGithubRelease, "done");
   } catch (e: any) {
-    reportError(e, 5, stepTitle5);
+    reportError(e, 5, stepTitles.createGithubRelease);
   }
 
   const versionFromNewTag = (
     EnvVarManager.getEnvVar("GITHUB_REF").split("/").pop() as string
-  ).replace("refs/tags/RELEASE-", "");
+  ).replace("refs/tags/v", "");
 
   core.setOutput("version", versionFromNewTag);
 }
 
-run();
+// only run this action automatically if we are not in a Jest test
+// (since the Jest tests are calling it explicitly)
+if (!isJestTestRun) {
+  run();
+}

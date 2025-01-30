@@ -1,7 +1,8 @@
 import * as fs from "node:fs";
 import semver from "semver";
-import { execSync } from "child_process";
 import { EnvVarManager } from "@/env/envVarManager";
+import { getLatestNpmVersion } from "@/helpers/getLatestNpmVersion";
+import { isValidSemverSuccessor } from "@/helpers/isValidSemverSuccessor";
 
 export const validateReleaseVersionNumber = () => {
   const packageJson = JSON.parse(fs.readFileSync("package.json", "utf8"));
@@ -11,10 +12,17 @@ export const validateReleaseVersionNumber = () => {
     .split("/")
     .pop() as string;
 
-  const versionFromNewTag = newTag.replace("refs/tags/RELEASE-", "");
+  // remove leading 'v':
+  const versionFromNewTag = newTag.replace("v", "");
 
   if (!packageVersion) {
     throw new Error("package.json does not contain a version field.");
+  }
+
+  if (!semver.valid(packageVersion)) {
+    throw new Error(
+      `package.json version '${packageVersion}' is not a valid semver.`,
+    );
   }
 
   if (packageVersion !== versionFromNewTag) {
@@ -26,9 +34,7 @@ export const validateReleaseVersionNumber = () => {
   let latestNpmVersion;
   try {
     // Attempt to get the latest version from npm
-    latestNpmVersion = execSync(`npm show ${packageName} version`)
-      .toString()
-      .trim();
+    latestNpmVersion = getLatestNpmVersion(packageName);
   } catch (error) {
     console.log(
       "No version found on npm registry. Assuming this is the first release.",
@@ -40,13 +46,33 @@ export const validateReleaseVersionNumber = () => {
     const versionDifference = semver.diff(versionFromNewTag, latestNpmVersion);
     if (
       !versionDifference ||
-      !["major", "minor", "patch"].includes(versionDifference)
+      !isValidSemverSuccessor(latestNpmVersion, versionFromNewTag)
     ) {
       throw new Error(
         `Invalid version increment: ${versionFromNewTag} is not a valid successor of ${latestNpmVersion}.`,
       );
     }
   } else {
-    // TODO since were assuming it is the first version it cant be something like 1.0.1
+    const parsed = semver.parse(versionFromNewTag);
+    if (!parsed) {
+      throw new Error(
+        `Could not parse versionFromNewTag '${versionFromNewTag}'`,
+      );
+    }
+
+    const { major, minor, patch, prerelease } = parsed;
+
+    if (
+      (major === 1 && minor === 0 && patch === 0) || // 1.0.0
+      (major === 0 && minor === 1 && patch === 0) || // 0.1.0
+      (major === 0 && minor === 0 && patch === 1) || // 0.0.1
+      (major === 1 && minor === 0 && patch === 0 && prerelease.length > 0) // Pre-release: 1.0.0-alpha, etc.
+    ) {
+      // do nothing, everything's ok!
+    } else {
+      throw new Error(
+        `We are dealing with a first release, but the desired version is '${versionFromNewTag}', while valid first versions are only '1.0.0', '0.1.0', '0.0.1', '1.0.0-alpha', etc.'`,
+      );
+    }
   }
 };

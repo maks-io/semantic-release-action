@@ -7,6 +7,6 @@ export const reportError = (
   stepTitle: string,
 ) => {
   core.setFailed(error.message);
-  logStep(stepNumber, stepTitle, "failed");
+  logStep(stepTitle, "failed");
   throw new Error(error.message);
 };
