@@ -8,6 +8,7 @@ import { createGitHubRelease } from "@/helpers/createGitHubRelease";
 import { reportError } from "@/helpers/reportError";
 import { stepTitles } from "@/config/stepTitles";
 import { validateLicense } from "@/helpers/validateLicense";
+import {validateStaticCode} from "@/helpers/validateStaticCode";
 
 const isJestTestRun = process.env.JEST_WORKER_ID !== undefined;
 
@@ -43,7 +44,22 @@ export async function run() {
     reportError(stepTitles.validLicense, e);
   }
 
-  // TODO validate static code
+  try {
+    logStep(stepTitles.validLicense, "start");
+    validateLicense();
+    logStep(stepTitles.validLicense, "done");
+  } catch (e: any) {
+    reportError(stepTitles.validLicense, e);
+  }
+
+  try {
+    logStep(stepTitles.validStaticCode, "start");
+    validateStaticCode();
+    logStep(stepTitles.validStaticCode, "done");
+  } catch (e: any) {
+    reportError(stepTitles.validStaticCode, e);
+  }
+
   // TODO run unit tests
   // TODO build
 

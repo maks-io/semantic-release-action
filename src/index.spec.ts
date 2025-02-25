@@ -378,5 +378,16 @@ describe("testing entire action run with mocks", () => {
         expect(core.setFailed).toHaveBeenCalledWith(expect.stringMatching(expectedErrorMsg));
       });
     });
+    describe("invalid static code", () => {
+      it.todo("package.json does not have a scripts prop", async () => {
+        // TODO
+      });
+      it.todo("package.json does not have a check-all script", async () => {
+        // TODO
+      });
+      it.todo("the static code check fails", async () => {
+        // TODO
+      });
+    });
   });
 });
