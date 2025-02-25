@@ -267,5 +267,116 @@ describe("testing entire action run with mocks", () => {
         expect(core.setFailed).toHaveBeenCalledWith(expect.stringMatching(expectedErrorMsg));
       });
     });
+    describe("invalid license", () => {
+      it("cannot read LICENSE file", async () => {
+        process.env.GITHUB_REF = "refs/tags/v1.0.0";
+        jest.spyOn(fs, "readFileSync").mockImplementationOnce(() => {
+          return JSON.stringify({ name: "some-package", description: "Some description", version: "1.0.0" });
+        });
+        jest.spyOn(fs, "readFileSync").mockImplementation(() => {
+          throw new Error("Could not read file");
+        });
+
+        const expectedErrorMsg = /Could not read file/i;
+
+        await expect(run()).rejects.toThrow(expectedErrorMsg);
+
+        expect(core.setFailed).toHaveBeenCalledWith(expect.stringMatching(expectedErrorMsg));
+      });
+      it("LICENSE file has no valid copyright year (1)", async () => {
+        process.env.GITHUB_REF = "refs/tags/v1.0.0";
+        jest.spyOn(fs, "readFileSync").mockImplementationOnce(() => {
+          return JSON.stringify({ name: "some-package", description: "Some description", version: "1.0.0" });
+        });
+        jest.spyOn(fs, "readFileSync").mockImplementationOnce(() => {
+          return "Copyright 2024 Markus Kurzmann <markus@kurzmann.io>\netc etc etc...";
+        });
+
+        const expectedErrorMsg = /LICENSE file does not contain a valid copyright year./i;
+
+        await expect(run()).rejects.toThrow(expectedErrorMsg);
+
+        expect(core.setFailed).toHaveBeenCalledWith(expect.stringMatching(expectedErrorMsg));
+      });
+      it("LICENSE file has no valid copyright year (2)", async () => {
+        process.env.GITHUB_REF = "refs/tags/v1.0.0";
+        jest.spyOn(fs, "readFileSync").mockImplementationOnce(() => {
+          return JSON.stringify({ name: "some-package", description: "Some description", version: "1.0.0" });
+        });
+        jest.spyOn(fs, "readFileSync").mockImplementationOnce(() => {
+          return "Markus Kurzmann <markus@kurzmann.io>\netc etc etc...";
+        });
+
+        const expectedErrorMsg = /LICENSE file does not contain a valid copyright year./i;
+
+        await expect(run()).rejects.toThrow(expectedErrorMsg);
+
+        expect(core.setFailed).toHaveBeenCalledWith(expect.stringMatching(expectedErrorMsg));
+      });
+      it("LICENSE file has no valid author name (1)", async () => {
+        process.env.GITHUB_REF = "refs/tags/v1.0.0";
+        jest.spyOn(fs, "readFileSync").mockImplementationOnce(() => {
+          return JSON.stringify({ name: "some-package", description: "Some description", version: "1.0.0" });
+        });
+        jest.spyOn(fs, "readFileSync").mockImplementationOnce(() => {
+          const currentYear = new Date().getFullYear();
+          return `Copyright ${currentYear} Some Author <markus@kurzmann.io>\netc etc etc...`;
+        });
+
+        const expectedErrorMsg = /LICENSE file does not contain a valid author name./i;
+
+        await expect(run()).rejects.toThrow(expectedErrorMsg);
+
+        expect(core.setFailed).toHaveBeenCalledWith(expect.stringMatching(expectedErrorMsg));
+      });
+      it("LICENSE file has no valid author name (2)", async () => {
+        process.env.GITHUB_REF = "refs/tags/v1.0.0";
+        jest.spyOn(fs, "readFileSync").mockImplementationOnce(() => {
+          return JSON.stringify({ name: "some-package", description: "Some description", version: "1.0.0" });
+        });
+        jest.spyOn(fs, "readFileSync").mockImplementationOnce(() => {
+          const currentYear = new Date().getFullYear();
+          return `Copyright ${currentYear} <markus@kurzmann.io>\netc etc etc...`;
+        });
+
+        const expectedErrorMsg = /LICENSE file does not contain a valid author name./i;
+
+        await expect(run()).rejects.toThrow(expectedErrorMsg);
+
+        expect(core.setFailed).toHaveBeenCalledWith(expect.stringMatching(expectedErrorMsg));
+      });
+      it("LICENSE file has no valid author email (1)", async () => {
+        process.env.GITHUB_REF = "refs/tags/v1.0.0";
+        jest.spyOn(fs, "readFileSync").mockImplementationOnce(() => {
+          return JSON.stringify({ name: "some-package", description: "Some description", version: "1.0.0" });
+        });
+        jest.spyOn(fs, "readFileSync").mockImplementationOnce(() => {
+          const currentYear = new Date().getFullYear();
+          return `Copyright ${currentYear} Markus Kurzmann <somewrong@email.com>\netc etc etc...`;
+        });
+
+        const expectedErrorMsg = /LICENSE file does not contain a valid author email./i;
+
+        await expect(run()).rejects.toThrow(expectedErrorMsg);
+
+        expect(core.setFailed).toHaveBeenCalledWith(expect.stringMatching(expectedErrorMsg));
+      });
+      it("LICENSE file has no valid author email (2)", async () => {
+        process.env.GITHUB_REF = "refs/tags/v1.0.0";
+        jest.spyOn(fs, "readFileSync").mockImplementationOnce(() => {
+          return JSON.stringify({ name: "some-package", description: "Some description", version: "1.0.0" });
+        });
+        jest.spyOn(fs, "readFileSync").mockImplementationOnce(() => {
+          const currentYear = new Date().getFullYear();
+          return `Copyright ${currentYear} Markus Kurzmann\netc etc etc...`;
+        });
+
+        const expectedErrorMsg = /LICENSE file does not contain a valid author email./i;
+
+        await expect(run()).rejects.toThrow(expectedErrorMsg);
+
+        expect(core.setFailed).toHaveBeenCalledWith(expect.stringMatching(expectedErrorMsg));
+      });
+    });
   });
 });

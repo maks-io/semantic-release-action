@@ -7,6 +7,7 @@ import { releaseToNpmRegistry } from "@/helpers/releaseToNpmRegistry";
 import { createGitHubRelease } from "@/helpers/createGitHubRelease";
 import { reportError } from "@/helpers/reportError";
 import { stepTitles } from "@/config/stepTitles";
+import { validateLicense } from "@/helpers/validateLicense";
 
 const isJestTestRun = process.env.JEST_WORKER_ID !== undefined;
 
@@ -16,14 +17,14 @@ export async function run() {
     EnvVarManager.validateAll(true, !isJestTestRun);
     logStep(stepTitles.validEnvVars, "done");
   } catch (e: any) {
-    reportError(e, 1, stepTitles.validEnvVars);
+    reportError(stepTitles.validEnvVars, e);
   }
   try {
     logStep(stepTitles.validTag, "start");
     validateRef();
     logStep(stepTitles.validTag, "done");
   } catch (e: any) {
-    reportError(e, 2, stepTitles.validTag);
+    reportError(stepTitles.validTag, e);
   }
 
   try {
@@ -31,10 +32,17 @@ export async function run() {
     validateReleaseVersionNumber();
     logStep(stepTitles.validReleaseNr, "done");
   } catch (e: any) {
-    reportError(e, 3, stepTitles.validReleaseNr);
+    reportError(stepTitles.validReleaseNr, e);
   }
 
-  // TODO validate license
+  try {
+    logStep(stepTitles.validLicense, "start");
+    validateLicense();
+    logStep(stepTitles.validLicense, "done");
+  } catch (e: any) {
+    reportError(stepTitles.validLicense, e);
+  }
+
   // TODO validate static code
   // TODO run unit tests
   // TODO build
@@ -44,7 +52,7 @@ export async function run() {
     releaseToNpmRegistry();
     logStep(stepTitles.releaseToNpm, "done");
   } catch (e: any) {
-    reportError(e, 4, stepTitles.releaseToNpm);
+    reportError(stepTitles.releaseToNpm, e);
   }
 
   try {
@@ -52,7 +60,7 @@ export async function run() {
     createGitHubRelease();
     logStep(stepTitles.createGithubRelease, "done");
   } catch (e: any) {
-    reportError(e, 5, stepTitles.createGithubRelease);
+    reportError(stepTitles.createGithubRelease, e);
   }
 
   const versionFromNewTag = (
@@ -63,7 +71,7 @@ export async function run() {
 }
 
 // only run this action automatically if we are not in a Jest test
-// (since the Jest tests are calling it explicitly)
+// (since the Jest tests are calling run() explicitly)
 if (!isJestTestRun) {
   run();
 }
