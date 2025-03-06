@@ -8,7 +8,10 @@ import { createGitHubRelease } from "@/helpers/createGitHubRelease";
 import { reportError } from "@/helpers/reportError";
 import { stepTitles } from "@/config/stepTitles";
 import { validateLicense } from "@/helpers/validateLicense";
-import {validateStaticCode} from "@/helpers/validateStaticCode";
+import { validateStaticCode } from "@/helpers/validateStaticCode";
+import { install } from "@/helpers/install";
+import { runTests } from "@/helpers/runTests";
+import { runBuild } from "@/helpers/runBuild";
 
 const isJestTestRun = process.env.JEST_WORKER_ID !== undefined;
 
@@ -53,6 +56,14 @@ export async function run() {
   }
 
   try {
+    logStep(stepTitles.install, "start");
+    install();
+    logStep(stepTitles.install, "done");
+  } catch (e: any) {
+    reportError(stepTitles.install, e);
+  }
+
+  try {
     logStep(stepTitles.validStaticCode, "start");
     validateStaticCode();
     logStep(stepTitles.validStaticCode, "done");
@@ -60,8 +71,21 @@ export async function run() {
     reportError(stepTitles.validStaticCode, e);
   }
 
-  // TODO run unit tests
-  // TODO build
+  try {
+    logStep(stepTitles.runTests, "start");
+    runTests();
+    logStep(stepTitles.runTests, "done");
+  } catch (e: any) {
+    reportError(stepTitles.runTests, e);
+  }
+
+  try {
+    logStep(stepTitles.runBuild, "start");
+    runBuild();
+    logStep(stepTitles.runBuild, "done");
+  } catch (e: any) {
+    reportError(stepTitles.runBuild, e);
+  }
 
   try {
     logStep(stepTitles.releaseToNpm, "start");
